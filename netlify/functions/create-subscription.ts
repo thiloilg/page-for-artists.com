@@ -2,13 +2,15 @@ import { Handler } from '@netlify/functions';
 import fetch from 'node-fetch';
 
 const PAYPAL_API_URL =
-  process.env.PAYPAL_API_URL || 'https://api-m.sandbox.paypal.com';
+    process.env.PAYPAL_API_URL || 'https://api-m.sandbox.paypal.com';
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 const PLAN_ID = process.env.PAYPAL_PLAN_ID;
 
 async function getAccessToken() {
   const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+  console.log('Fetching PayPal access token...');
+
   const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
     method: 'POST',
     body: 'grant_type=client_credentials',
@@ -17,12 +19,23 @@ async function getAccessToken() {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
   });
+
   const data = await response.json();
+
+  if (!response.ok) {
+    console.error('Failed to fetch PayPal access token:', data);
+    throw new Error('Error fetching access token');
+  }
+
+  console.log('Successfully fetched PayPal access token.');
   return data.access_token;
 }
 
 export const handler: Handler = async (event) => {
+  console.log('Received event:', JSON.stringify(event));
+
   if (event.httpMethod !== 'POST') {
+    console.warn('Invalid HTTP method:', event.httpMethod);
     return {
       statusCode: 405,
       body: 'Method Not Allowed',
@@ -30,9 +43,11 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    console.log('Parsing event body...');
     const { spotifyUri, email } = JSON.parse(event.body || '{}');
 
     if (!spotifyUri || !email) {
+      console.warn('Validation failed: Missing spotifyUri or email');
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -41,9 +56,10 @@ export const handler: Handler = async (event) => {
       };
     }
 
+    console.log('Fetching access token...');
     const accessToken = await getAccessToken();
 
-    // Create subscription
+    console.log('Creating subscription with PayPal...');
     const response = await fetch(`${PAYPAL_API_URL}/v1/billing/subscriptions`, {
       method: 'POST',
       headers: {
@@ -69,20 +85,23 @@ export const handler: Handler = async (event) => {
     const subscription = await response.json();
 
     if (!response.ok) {
+      console.error('Failed to create PayPal subscription:', subscription);
       throw new Error(subscription.message || 'Failed to create subscription');
     }
+
+    console.log('PayPal subscription created successfully:', subscription);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         subscriptionId: subscription.id,
         approvalUrl: subscription.links.find(
-          (link: any) => link.rel === 'approve'
+            (link: any) => link.rel === 'approve'
         ).href,
       }),
     };
   } catch (error) {
-    console.error('Subscription error:', error);
+    console.error('Error occurred while processing subscription:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to create subscription' }),
