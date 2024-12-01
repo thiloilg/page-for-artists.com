@@ -7,7 +7,7 @@ const PAYPAL_API_URL =
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 const STRAPI_API_ORIGIN = process.env.STRAPI_API_ORIGIN;
-const STRAPI_API_KEY = process.env.STRAPI_API_KEY;
+const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 async function getAccessToken() {
   const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
@@ -39,7 +39,7 @@ async function updateStrapiCustomer(customerData) {
   const response = await fetch(`${STRAPI_API_ORIGIN}/api/customers`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${STRAPI_API_KEY}`,
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ data: customerData }),
