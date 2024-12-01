@@ -76,7 +76,7 @@ export const handler: Handler = async (event) => {
           brand_name: 'Artist Landing Page',
           shipping_preference: 'NO_SHIPPING',
           user_action: 'SUBSCRIBE_NOW',
-          return_url: `${process.env.URL}/success`,
+          return_url: `${process.env.URL}/.netlify/functions/handle-subscription-success`,
           cancel_url: `${process.env.URL}/checkout`,
         },
       }),
