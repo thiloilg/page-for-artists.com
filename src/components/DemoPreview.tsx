@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 
 export function DemoPreview() {
     return (
-        <section className="py-24 bg-gray-50">
+        <section className="py-12 bg-gray-50">
             <div className="container mx-auto px-4">
-                <div className="max-w-3xl mx-auto text-center mb-16">
-                    <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                <div className="max-w-3xl mx-auto text-center mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-3">
                         See It in Action
                     </h2>
-                    <p className="text-xl text-gray-600">
+                    <p className="text-lg text-gray-600">
                         Check out how your artist landing page could look like
                     </p>
                 </div>

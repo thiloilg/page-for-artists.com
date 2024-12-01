@@ -23,13 +23,13 @@ const features: Feature[] = [
 
 export function Features() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
             Everything You Need for Your Music Career
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-lg text-gray-600">
             Powerful features that help you focus on what matters most - your music.
           </p>
         </div>
