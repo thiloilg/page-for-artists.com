@@ -38,17 +38,25 @@ export function Login() {
   return (
     <div className="min-h-screen bg-gray-50 pt-24">
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8">
+        <Link
+          to="/"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
 
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6 md:p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Login to Your Account</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+            Login to Your Account
+          </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email Address
               </label>
               <input
@@ -62,7 +70,10 @@ export function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password
               </label>
               <input
@@ -75,11 +86,7 @@ export function Login() {
               />
             </div>
 
-            {error && (
-              <div className="text-red-600 text-sm">
-                {error}
-              </div>
-            )}
+            {error && <div className="text-red-600 text-sm">{error}</div>}
 
             <button
               type="submit"

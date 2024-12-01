@@ -1,7 +1,10 @@
-export function validateSpotifyArtistUrl(url: string): { isValid: boolean; artistId?: string } {
+export function validateSpotifyArtistUrl(url: string): {
+  isValid: boolean;
+  artistId?: string;
+} {
   try {
     const urlObj = new URL(url);
-    
+
     // Check if it's a Spotify URL
     if (!urlObj.hostname.includes('spotify.com')) {
       return { isValid: false };

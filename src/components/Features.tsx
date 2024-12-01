@@ -6,19 +6,22 @@ import type { Feature } from '../types';
 const features: Feature[] = [
   {
     title: 'Automatic Updates',
-    description: 'Never manually update your bio links again. New releases are automatically added to your landing page.',
-    icon: RefreshCw
+    description:
+      'Never manually update your bio links again. New releases are automatically added to your landing page.',
+    icon: RefreshCw,
   },
   {
     title: 'Analytics Dashboard',
-    description: 'Track which releases get the most clicks and which stores perform best with detailed analytics.',
-    icon: BarChart3
+    description:
+      'Track which releases get the most clicks and which stores perform best with detailed analytics.',
+    icon: BarChart3,
   },
   {
     title: 'SEO Optimized',
-    description: 'Get discovered more easily with our SEO-optimized landing pages and proper deep linking.',
-    icon: Search
-  }
+    description:
+      'Get discovered more easily with our SEO-optimized landing pages and proper deep linking.',
+    icon: Search,
+  },
 ];
 
 export function Features() {
@@ -30,7 +33,8 @@ export function Features() {
             Everything You Need for Your Music Career
           </h2>
           <p className="text-base md:text-lg text-gray-600">
-            Powerful features that help you focus on what matters most - your music.
+            Powerful features that help you focus on what matters most - your
+            music.
           </p>
         </div>
 
@@ -46,8 +50,12 @@ export function Features() {
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
                 <feature.icon className="w-6 h-6 text-indigo-600" />
               </div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-sm md:text-base text-gray-600">{feature.description}</p>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">
+                {feature.title}
+              </h3>
+              <p className="text-sm md:text-base text-gray-600">
+                {feature.description}
+              </p>
             </motion.div>
           ))}
         </div>

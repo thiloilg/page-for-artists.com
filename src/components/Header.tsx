@@ -11,7 +11,9 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
             <Music2 className="w-8 h-8 text-indigo-600" />
-            <span className="text-xl font-bold text-gray-900">Page for Artists</span>
+            <span className="text-xl font-bold text-gray-900">
+              Page for Artists
+            </span>
           </Link>
 
           {/* Mobile menu button */}
@@ -28,10 +30,7 @@ export function Header() {
 
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/login" 
-              className="text-gray-600 hover:text-gray-900"
-            >
+            <Link to="/login" className="text-gray-600 hover:text-gray-900">
               Login
             </Link>
           </nav>
@@ -41,7 +40,9 @@ export function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-100">
             <nav className="flex flex-col space-y-4">
-              <Link to="/login" className="text-gray-600 hover:text-gray-900">Login</Link>
+              <Link to="/login" className="text-gray-600 hover:text-gray-900">
+                Login
+              </Link>
             </nav>
           </div>
         )}

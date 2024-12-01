@@ -10,13 +10,14 @@ export function Success() {
           <div className="flex justify-center mb-6">
             <CheckCircle className="w-16 h-16 text-green-500" />
           </div>
-          
+
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Thank You for Your Purchase!
           </h1>
-          
+
           <p className="text-gray-600 mb-8">
-            Your landing page is being set up. You'll receive an email with further instructions shortly.
+            Your landing page is being set up. You'll receive an email with
+            further instructions shortly.
           </p>
 
           <Link

@@ -7,14 +7,19 @@ export function PrivacyPolicy() {
       <div className="container mx-auto px-4 py-8">
         <div className="legal-content">
           <h1>Privacy Policy</h1>
-          
+
           <h2>1. Overview</h2>
-          <p>This Privacy Policy explains how Page for Artists collects, uses, and protects your personal information when you use our service.</p>
+          <p>
+            This Privacy Policy explains how Page for Artists collects, uses,
+            and protects your personal information when you use our service.
+          </p>
 
           <h2>2. Data We Collect</h2>
           <ul>
             <li>Email address (for account creation and communication)</li>
-            <li>Spotify Artist URI (to generate and update your landing page)</li>
+            <li>
+              Spotify Artist URI (to generate and update your landing page)
+            </li>
             <li>Payment information (processed securely through PayPal)</li>
             <li>Usage statistics (page views, click-through rates)</li>
             <li>Analytics data (visitor behavior, traffic sources)</li>
@@ -24,7 +29,9 @@ export function PrivacyPolicy() {
           <ul>
             <li>To create and maintain your artist landing page</li>
             <li>To automatically update your release information</li>
-            <li>To provide analytics and insights about your page performance</li>
+            <li>
+              To provide analytics and insights about your page performance
+            </li>
             <li>To process your subscription payments</li>
             <li>To communicate important service updates</li>
           </ul>
@@ -48,8 +55,11 @@ export function PrivacyPolicy() {
           </ul>
 
           <h2>6. Contact</h2>
-          <p>For privacy-related concerns, please contact:<br />
-          contact@thiloilg.com</p>
+          <p>
+            For privacy-related concerns, please contact:
+            <br />
+            contact@thiloilg.com
+          </p>
         </div>
       </div>
     </div>

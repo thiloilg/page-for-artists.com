@@ -10,7 +10,7 @@ import { Login } from './pages/Login';
 import { LegalNotice } from './pages/LegalNotice';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Terms } from './pages/Terms';
-import { Features } from "./components/Features.tsx";
+import { Features } from './components/Features.tsx';
 
 export function App() {
   return (
@@ -19,13 +19,16 @@ export function App() {
         <Header />
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={
-              <>
-                <Hero />
-                <DemoPreview />
-                <Features />
-              </>
-            } />
+            <Route
+              path="/"
+              element={
+                <>
+                  <Hero />
+                  <DemoPreview />
+                  <Features />
+                </>
+              }
+            />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/success" element={<Success />} />
             <Route path="/login" element={<Login />} />

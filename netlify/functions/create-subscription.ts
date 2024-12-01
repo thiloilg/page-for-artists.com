@@ -1,7 +1,8 @@
 import { Handler } from '@netlify/functions';
 import fetch from 'node-fetch';
 
-const PAYPAL_API_URL = process.env.PAYPAL_API_URL || 'https://api-m.sandbox.paypal.com';
+const PAYPAL_API_URL =
+  process.env.PAYPAL_API_URL || 'https://api-m.sandbox.paypal.com';
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 const PLAN_ID = process.env.PAYPAL_PLAN_ID;
@@ -30,11 +31,13 @@ export const handler: Handler = async (event) => {
 
   try {
     const { spotifyUri, email } = JSON.parse(event.body || '{}');
-    
+
     if (!spotifyUri || !email) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Spotify URI and email are required' }),
+        body: JSON.stringify({
+          error: 'Spotify URI and email are required',
+        }),
       };
     }
 
@@ -50,13 +53,13 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify({
         plan_id: PLAN_ID,
         subscriber: {
-          email_address: email
+          email_address: email,
         },
         custom_id: spotifyUri,
         application_context: {
-          brand_name: "Artist Landing Page",
-          shipping_preference: "NO_SHIPPING",
-          user_action: "SUBSCRIBE_NOW",
+          brand_name: 'Artist Landing Page',
+          shipping_preference: 'NO_SHIPPING',
+          user_action: 'SUBSCRIBE_NOW',
           return_url: `${process.env.URL}/success`,
           cancel_url: `${process.env.URL}/checkout`,
         },
@@ -73,7 +76,9 @@ export const handler: Handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({
         subscriptionId: subscription.id,
-        approvalUrl: subscription.links.find((link: any) => link.rel === 'approve').href,
+        approvalUrl: subscription.links.find(
+          (link: any) => link.rel === 'approve'
+        ).href,
       }),
     };
   } catch (error) {
