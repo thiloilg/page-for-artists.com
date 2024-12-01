@@ -27,8 +27,8 @@ export function Hero() {
             </h1>
             
             <p className="text-lg text-gray-600 mb-6">
-              Stop manually updating your bio links. Our platform automatically syncs with Spotify, Apple Music, 
-              SoundCloud, and all other major platforms to showcase your releases, complete with store links and analytics.
+              Stop manually updating your bio links. Our platform automatically syncs with Spotify, Apple Music, and other major platforms to showcase your latest releases.
+							Gain valuable insights and grow your audience.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-8 sm:space-y-0 sm:space-x-12">

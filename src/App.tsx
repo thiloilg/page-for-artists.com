@@ -5,6 +5,7 @@ import { Hero } from './components/Hero';
 import { Features } from './components/Features';
 import { DemoPreview } from './components/DemoPreview';
 import { Checkout } from './pages/Checkout';
+import { Success } from './pages/Success';
 
 export function App() {
   return (
@@ -21,6 +22,7 @@ export function App() {
               </>
             } />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/success" element={<Success />} />
           </Routes>
         </main>
       </div>
