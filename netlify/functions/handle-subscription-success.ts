@@ -43,12 +43,12 @@ async function updateStrapiCustomer(subscriptionId, customerData) {
     throw new Error('Customer not found in Strapi');
   }
 
-  const customerId = findData.data[0].id;
+  const documentId = findData.data[0].documentId;
 
   // Step 2: Update the customer
-  console.log(`Updating customer in Strapi with ID: ${customerId}`);
+  console.log(`Updating customer in Strapi with Document-ID: ${documentId}`);
   const updateResponse = await fetch(
-      `${STRAPI_API_ORIGIN}/api/customers/${customerId}`,
+      `${STRAPI_API_ORIGIN}/api/customers/${documentId}`,
       {
         method: 'PUT',
         headers: {
