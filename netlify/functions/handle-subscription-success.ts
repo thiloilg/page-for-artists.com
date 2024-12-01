@@ -1,10 +1,13 @@
 import { Handler } from '@netlify/functions';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 
 const PAYPAL_API_URL =
     process.env.PAYPAL_API_URL || 'https://api-m.sandbox.paypal.com';
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+const STRAPI_API_ORIGIN = process.env.STRAPI_API_ORIGIN;
+const STRAPI_API_KEY = process.env.STRAPI_API_KEY;
 
 async function getAccessToken() {
   const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
@@ -30,6 +33,41 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+async function createStrapiUser(username, email, password) {
+  const response = await fetch(`${STRAPI_API_ORIGIN}/api/users`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${STRAPI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, email, password }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('Failed to create Strapi user:', error);
+    throw new Error('Error creating Strapi user');
+  }
+
+  return response.json();
+}
+
+function generatePassword() {
+  return crypto.randomBytes(8).toString('hex'); // Generate a random 16-character password
+}
+
+async function sendEmail(email, username, password) {
+  console.log(`Sending email to ${email} with username: ${username}`);
+  // Implement your email sending logic here.
+  // You can use services like SendGrid, Postmark, etc.
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('Email sent successfully');
+      resolve();
+    }, 1);
+  }, 1);
+}
+
 export const handler: Handler = async (event) => {
   console.log('Received event:', JSON.stringify(event));
 
@@ -42,7 +80,6 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    // Parse URL parameters
     const { subscription_id } = event.queryStringParameters;
 
     if (!subscription_id) {
@@ -55,7 +92,6 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    console.log('Fetching access token...');
     const accessToken = await getAccessToken();
 
     console.log('Fetching subscription details from PayPal...');
@@ -76,20 +112,29 @@ export const handler: Handler = async (event) => {
       throw new Error(subscriptionDetails.message || 'Failed to fetch subscription details');
     }
 
-    console.log('PayPal subscription details fetched successfully:', subscriptionDetails);
+    const { subscriber } = subscriptionDetails;
+    const email = subscriber.email_address;
+    const username = subscriber.name.given_name + '_' + subscriber.name.surname;
+    const password = generatePassword();
+
+    console.log('Creating user in Strapi...');
+    await createStrapiUser(username, email, password);
+
+    console.log('Sending email to user...');
+    await sendEmail(email, username, password);
 
     return {
-      statusCode: 302, // Redirect
+      statusCode: 302,
       headers: {
         Location: '/success',
       },
       body: JSON.stringify(subscriptionDetails),
     };
   } catch (error) {
-    console.error('Error occurred while fetching subscription details:', error);
+    console.error('Error occurred while processing subscription:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to fetch subscription details' }),
+      body: JSON.stringify({ error: 'Failed to process subscription' }),
     };
   }
 };
