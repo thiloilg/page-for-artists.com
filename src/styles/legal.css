@@ -1,0 +1,27 @@
+.legal-content {
+  @apply max-w-3xl mx-auto;
+}
+
+.legal-content h1 {
+  @apply text-3xl font-bold text-gray-900 mb-8 pb-4 border-b;
+}
+
+.legal-content h2 {
+  @apply text-xl font-semibold text-gray-900 mt-8 mb-4;
+}
+
+.legal-content p {
+  @apply mb-4 text-gray-600;
+}
+
+.legal-content ul {
+  @apply mb-4 ml-4 list-disc text-gray-600;
+}
+
+.legal-content li {
+  @apply mb-2;
+}
+
+.legal-content a {
+  @apply text-indigo-600 hover:text-indigo-700;
+}
