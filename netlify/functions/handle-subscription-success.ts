@@ -67,7 +67,7 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const { subscription_id } = event.queryStringParameters;
+    const {subscription_id} = event.queryStringParameters;
 
     if (!subscription_id) {
       console.warn('Validation failed: Missing subscription_id');
@@ -99,7 +99,7 @@ export const handler: Handler = async (event) => {
       throw new Error(subscriptionDetails.message || 'Failed to fetch subscription details');
     }
 
-    const { subscriber, status, create_time, id: payer_id } = subscriptionDetails;
+    const {subscriber, status, create_time, id: payer_id} = subscriptionDetails;
 
     const customerData = {
       email: subscriber.email_address,
@@ -116,14 +116,18 @@ export const handler: Handler = async (event) => {
     await updateStrapiCustomer(customerData);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Customer updated successfully' }),
+      statusCode: 302,
+      headers: {
+        Location: '/success',
+      },
     };
   } catch (error) {
     console.error('Error occurred while processing subscription:', error);
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to process subscription' }),
+      statusCode: 302,
+      headers: {
+        Location: '/error',
+      },
     };
   }
 };
