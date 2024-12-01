@@ -33,39 +33,26 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-async function createStrapiUser(username, email, password) {
-  const response = await fetch(`${STRAPI_API_ORIGIN}/api/users`, {
+async function updateStrapiCustomer(customerData) {
+  console.log('Updating customer in Strapi...');
+
+  const response = await fetch(`${STRAPI_API_ORIGIN}/api/customers`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${STRAPI_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username, email, password }),
+    body: JSON.stringify({ data: customerData }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    console.error('Failed to create Strapi user:', error);
-    throw new Error('Error creating Strapi user');
+    console.error('Failed to update Strapi customer:', error);
+    throw new Error('Error updating Strapi customer');
   }
 
+  console.log('Customer updated successfully in Strapi.');
   return response.json();
-}
-
-function generatePassword() {
-  return crypto.randomBytes(8).toString('hex'); // Generate a random 16-character password
-}
-
-async function sendEmail(email, username, password) {
-  console.log(`Sending email to ${email} with username: ${username}`);
-  // Implement your email sending logic here.
-  // You can use services like SendGrid, Postmark, etc.
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log('Email sent successfully');
-      resolve();
-    }, 1);
-  }, 1);
 }
 
 export const handler: Handler = async (event) => {
@@ -112,23 +99,25 @@ export const handler: Handler = async (event) => {
       throw new Error(subscriptionDetails.message || 'Failed to fetch subscription details');
     }
 
-    const { subscriber } = subscriptionDetails;
-    const email = subscriber.email_address;
-    const username = subscriber.name.given_name + '_' + subscriber.name.surname;
-    const password = generatePassword();
+    const { subscriber, status, create_time, id: payer_id } = subscriptionDetails;
 
-    console.log('Creating user in Strapi...');
-    await createStrapiUser(username, email, password);
+    const customerData = {
+      email: subscriber.email_address,
+      password: crypto.randomBytes(8).toString('hex'), // Random 16-character password
+      spotify_url: 'string', // Replace with the actual Spotify URL if available
+      payment_status: status,
+      paypal_start_time: create_time,
+      paypal_payer_id: payer_id,
+      first_name: subscriber.name.given_name,
+      last_name: subscriber.name.surname,
+    };
 
-    console.log('Sending email to user...');
-    await sendEmail(email, username, password);
+    console.log('Updating customer in Strapi...');
+    await updateStrapiCustomer(customerData);
 
     return {
-      statusCode: 302,
-      headers: {
-        Location: '/success',
-      },
-      body: JSON.stringify(subscriptionDetails),
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Customer updated successfully' }),
     };
   } catch (error) {
     console.error('Error occurred while processing subscription:', error);
