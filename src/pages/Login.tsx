@@ -26,7 +26,6 @@ export function Login() {
         throw new Error('Invalid credentials');
       }
 
-      // Redirect to dashboard or reload page
       window.location.href = '/dashboard';
     } catch (err) {
       setError('Invalid email or password');
