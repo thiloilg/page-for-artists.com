@@ -21,70 +21,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const navigate = useNavigate();
 
-  const refreshAccessToken = useCallback(async () => {
-    try {
-      const response = await fetch('/.netlify/functions/refresh-token', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const { accessToken } = await response.json();
-        localStorage.setItem('accessToken', accessToken);
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  }, []);
-
+  // Check authentication status on mount
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        const success = await refreshAccessToken();
-        if (success) {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/.netlify/functions/refresh-token', {
+          method: 'POST',
+          credentials: 'include', // Important for cookies
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('accessToken', data.accessToken);
           setIsAuthenticated(true);
-          // In a real app, decode the token to get user info
-          setUser({ email: 'demo@example.com' });
-        } else {
-          localStorage.removeItem('accessToken');
+          // In a real app, you might want to decode the token to get user info
+          // For now, we'll use a placeholder
+          setUser({ email: 'user@example.com' });
         }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+        setUser(null);
+        localStorage.removeItem('accessToken');
       }
     };
 
-    initAuth();
-  }, [refreshAccessToken]);
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
     const response = await fetch('/.netlify/functions/login', {
       method: 'POST',
+      credentials: 'include', // Important for cookies
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
     });
 
     if (!response.ok) {
       throw new Error('Invalid credentials');
     }
 
-    const { accessToken } = await response.json();
-    localStorage.setItem('accessToken', accessToken);
+    const data = await response.json();
+    localStorage.setItem('accessToken', data.accessToken);
     setIsAuthenticated(true);
     setUser({ email });
     navigate('/dashboard');
   };
 
   const logout = async () => {
-    await fetch('/.netlify/functions/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    localStorage.removeItem('accessToken');
-    setIsAuthenticated(false);
-    setUser(null);
-    navigate('/login');
+    try {
+      await fetch('/.netlify/functions/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } finally {
+      localStorage.removeItem('accessToken');
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/login');
+    }
   };
 
   return (

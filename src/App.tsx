@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Header } from './components/Header';
@@ -13,6 +13,45 @@ import { LegalNotice } from './pages/LegalNotice';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Terms } from './pages/Terms';
 import { Features } from './components/Features';
+import { useAuth } from './contexts/AuthContext';
+
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <>
+            <Hero />
+            <DemoPreview />
+            <Features />
+          </>
+        }
+      />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/success" element={<Success />} />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+        }
+      />
+      <Route path="/legal" element={<LegalNotice />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
 
 export function App() {
   return (
@@ -21,32 +60,7 @@ export function App() {
         <div className="min-h-screen flex flex-col bg-white">
           <Header />
           <main className="flex-grow">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <>
-                    <Hero />
-                    <DemoPreview />
-                    <Features />
-                  </>
-                }
-              />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/success" element={<Success />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/legal" element={<LegalNotice />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
+            <AppRoutes />
           </main>
           <Footer />
         </div>

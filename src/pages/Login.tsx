@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,19 +24,7 @@ export function Login() {
     setError('');
 
     try {
-      const response = await fetch('/.netlify/functions/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Invalid credentials');
-      }
-
-      window.location.href = '/dashboard';
+      await login(email, password);
     } catch (err) {
       setError('Invalid email or password');
     } finally {

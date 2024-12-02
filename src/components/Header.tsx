@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Music2, Menu, X } from 'lucide-react';
+import { Music2, Menu, X, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-sm z-50 border-b border-gray-100">
@@ -30,9 +32,22 @@ export function Header() {
 
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/login" className="text-gray-600 hover:text-gray-900">
-              Login
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="flex items-center text-gray-600 hover:text-gray-900"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Login
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -40,9 +55,22 @@ export function Header() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-100">
             <nav className="flex flex-col space-y-4">
-              <Link to="/login" className="text-gray-600 hover:text-gray-900">
-                Login
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  onClick={logout}
+                  className="flex items-center text-gray-600 hover:text-gray-900"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Login
+                </Link>
+              )}
             </nav>
           </div>
         )}
