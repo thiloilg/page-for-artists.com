@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "@netlify/functions": "^2.8.2",
+    "@types/cookie": "^0.6.0",
     "@types/node": "^22.10.1",
     "clsx": "^2.1.0",
+    "cookie": "^1.0.2",
     "framer-motion": "^11.0.8",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.344.0",
     "node-fetch": "^2.7.0",
     "react": "^18.3.1",
