@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import fetch from 'node-fetch';
-import { PAYPAL_API_URL, PLAN_ID } from './common/envvars';
+import {APP_ORIGIN, PAYPAL_API_URL, PLAN_ID} from './common/envvars';
 import { getAccessToken } from './common/paypal';
 import { saveStrapiCustomer } from './common/strapi';
 
@@ -14,7 +14,6 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    console.log('Received event:', event);
 
     const { spotifyUri, email } = JSON.parse(event.body || '{}');
     if (!spotifyUri || !email) {
@@ -44,8 +43,8 @@ export const handler: Handler = async (event) => {
           brand_name: 'Artist Landing Page',
           shipping_preference: 'NO_SHIPPING',
           user_action: 'SUBSCRIBE_NOW',
-          return_url: `${URL}/.netlify/functions/handle-subscription-success`,
-          cancel_url: `${URL}/checkout`,
+          return_url: `${APP_ORIGIN}/.netlify/functions/handle-subscription-success`,
+          cancel_url: `${APP_ORIGIN}/checkout`,
         },
       }),
     });
