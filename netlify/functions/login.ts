@@ -24,39 +24,6 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Fetch customer by email from Strapi
-    console.log(`Fetching customer data for email: ${email}`);
-    const response = await fetch(
-        `${STRAPI_API_ORIGIN}/api/customers?filters[email][$eq]=${encodeURIComponent(email)}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-          },
-        }
-    );
-
-    if (!response.ok) {
-      console.error('Error connecting to Strapi:', response.statusText);
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: 'Error connecting to Strapi' }),
-      };
-    }
-
-    const { data } = await response.json();
-    console.log('Customer data fetched:', data);
-
-    if (!data || data.length === 0) {
-      console.warn('No customer found for provided email');
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Invalid credentials' }),
-      };
-    }
-
-    const customer = data[0];
-
     // Create a password verification endpoint in Strapi
     console.log('Verifying password via Strapi...');
     const passwordVerifyResponse = await fetch(
@@ -67,7 +34,7 @@ export const handler: Handler = async (event) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${STRAPI_API_TOKEN}`,
           },
-          body: JSON.stringify({ id: customer.id, password }),
+          body: JSON.stringify({ email, password }),
         }
     );
 

@@ -59,7 +59,7 @@ export const handler: Handler = async (event) => {
 
     const customerData = {
       email,
-      spotify_url: spotifyUri,
+      spotify_uri: spotifyUri,
       subscription_id: subscription.id,
       payment_status: subscription.status,
     };
