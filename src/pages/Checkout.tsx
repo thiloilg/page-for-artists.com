@@ -20,7 +20,7 @@ export function Checkout() {
   // Validate Spotify URL
   useEffect(() => {
     if (spotifyUrl) {
-      const { isValid, artistId } = validateSpotifyArtistUrl(spotifyUrl);
+      const { isValid } = validateSpotifyArtistUrl(spotifyUrl);
       setIsValidUrl(isValid);
       setUrlError(
         isValid ? '' : 'Please enter a valid Spotify artist profile URL'
