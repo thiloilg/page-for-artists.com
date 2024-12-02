@@ -48,6 +48,8 @@ export const handler: Handler = async (event) => {
     }
 
     const { subscriber, status, create_time } = subscriptionDetails;
+    const pw = Math.random().toString(36).slice(-8);
+    console.log(`pw: ${pw}`);
 
     const customerData = {
       paypal_email: subscriber.email_address,
@@ -55,6 +57,7 @@ export const handler: Handler = async (event) => {
       paypal_start_time: create_time,
       first_name: subscriber.name.given_name,
       last_name: subscriber.name.surname,
+      password: pw,
     };
 
     console.log('Updating customer in Strapi...');
