@@ -5,14 +5,20 @@ import { generateTokens } from './common/auth';
 import { STRAPI_API_ORIGIN, STRAPI_API_TOKEN } from './common/envvars';
 
 export const handler: Handler = async (event) => {
+  console.log('Received event:', event);
+
   if (event.httpMethod !== 'POST') {
+    console.warn('Invalid HTTP method:', event.httpMethod);
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
+    console.log('Parsing request body...');
     const { email, password } = JSON.parse(event.body || '{}');
+    console.log('Parsed request body:', { email });
 
     if (!email || !password) {
+      console.warn('Missing email or password in request');
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Email and password are required' }),
@@ -20,6 +26,7 @@ export const handler: Handler = async (event) => {
     }
 
     // Fetch customer by email from Strapi
+    console.log(`Fetching customer data for email: ${email}`);
     const response = await fetch(
         `${STRAPI_API_ORIGIN}/api/customers?filters[email][$eq]=${encodeURIComponent(email)}`,
         {
@@ -31,6 +38,7 @@ export const handler: Handler = async (event) => {
     );
 
     if (!response.ok) {
+      console.error('Error connecting to Strapi:', response.statusText);
       return {
         statusCode: response.status,
         body: JSON.stringify({ error: 'Error connecting to Strapi' }),
@@ -38,8 +46,10 @@ export const handler: Handler = async (event) => {
     }
 
     const { data } = await response.json();
+    console.log('Customer data fetched:', data);
 
     if (!data || data.length === 0) {
+      console.warn('No customer found for provided email');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid credentials' }),
@@ -47,19 +57,24 @@ export const handler: Handler = async (event) => {
     }
 
     const customer = data[0];
+    console.log('Verifying password...');
 
     // Verify password using bcrypt
     const isPasswordValid = await bcrypt.compare(password, customer.password);
 
     if (!isPasswordValid) {
+      console.warn('Password verification failed');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid credentials' }),
       };
     }
 
+    console.log('Password verified successfully. Generating tokens...');
     // Generate tokens
     const tokens = generateTokens({ email });
+
+    console.log('Tokens generated:', tokens);
 
     return {
       statusCode: 200,
@@ -73,6 +88,7 @@ export const handler: Handler = async (event) => {
       },
     };
   } catch (error) {
+    console.error('Error occurred during processing:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: `Internal server error: ${error.message}` }),
