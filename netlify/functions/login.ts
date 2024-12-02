@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
 import fetch from 'node-fetch';
-import bcrypt from 'bcryptjs';
 import { generateTokens } from './common/auth';
 import { STRAPI_API_ORIGIN, STRAPI_API_TOKEN } from './common/envvars';
 
@@ -57,12 +56,22 @@ export const handler: Handler = async (event) => {
     }
 
     const customer = data[0];
-    console.log('Verifying password...');
 
-    // Verify password using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, customer.password);
+    // Create a password verification endpoint in Strapi
+    console.log('Verifying password via Strapi...');
+    const passwordVerifyResponse = await fetch(
+        `${STRAPI_API_ORIGIN}/api/customers/verify-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+          },
+          body: JSON.stringify({ id: customer.id, password }),
+        }
+    );
 
-    if (!isPasswordValid) {
+    if (!passwordVerifyResponse.ok) {
       console.warn('Password verification failed');
       return {
         statusCode: 401,
