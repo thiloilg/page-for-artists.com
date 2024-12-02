@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, BarChart3, Search } from 'lucide-react';
 import type { Feature } from '../types';
