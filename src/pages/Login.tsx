@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Login() {
@@ -10,13 +10,17 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the return URL from location state
+  const from = location.state?.from?.pathname || '/dashboard';
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(from);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +29,7 @@ export function Login() {
 
     try {
       await login(email, password);
+      navigate(from);
     } catch (err) {
       setError('Invalid email or password');
     } finally {

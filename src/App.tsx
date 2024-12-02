@@ -13,11 +13,8 @@ import { LegalNotice } from './pages/LegalNotice';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Terms } from './pages/Terms';
 import { Features } from './components/Features';
-import { useAuth } from './contexts/AuthContext';
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Routes>
       <Route
@@ -32,12 +29,7 @@ function AppRoutes() {
       />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/success" element={<Success />} />
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
-        }
-      />
+      <Route path="/login" element={<Login />} />
       <Route path="/legal" element={<LegalNotice />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
