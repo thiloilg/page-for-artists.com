@@ -6,6 +6,7 @@ import { saveStrapiCustomer } from './common/strapi';
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
+    console.log('Invalid HTTP method:', event.httpMethod);
     return {
       statusCode: 405,
       body: 'Method Not Allowed',
@@ -13,16 +14,22 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    console.log('Received event:', event);
+
     const { spotifyUri, email } = JSON.parse(event.body || '{}');
     if (!spotifyUri || !email) {
+      console.log('Missing required parameters:', { spotifyUri, email });
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Spotify URI and email are required' }),
       };
     }
 
+    console.log('Getting PayPal access token...');
     const accessToken = await getAccessToken();
+    console.log('PayPal access token obtained:', accessToken);
 
+    console.log('Creating PayPal subscription...');
     const response = await fetch(`${PAYPAL_API_URL}/v1/billing/subscriptions`, {
       method: 'POST',
       headers: {
@@ -44,7 +51,10 @@ export const handler: Handler = async (event) => {
     });
 
     const subscription = await response.json();
+    console.log('PayPal subscription response:', subscription);
+
     if (!response.ok) {
+      console.error('Failed to create subscription:', subscription.message);
       throw new Error(subscription.message || 'Failed to create subscription');
     }
 
@@ -54,21 +64,33 @@ export const handler: Handler = async (event) => {
       subscription_id: subscription.id,
       payment_status: subscription.status,
     };
+
+    console.log('Saving customer to Strapi:', customerData);
     await saveStrapiCustomer(customerData);
+    console.log('Customer saved successfully');
+
+    const approvalUrl = subscription.links.find(
+        (link) => link.rel === 'approve'
+    )?.href;
+
+    console.log('Subscription created successfully:', {
+      subscriptionId: subscription.id,
+      approvalUrl,
+    });
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         subscriptionId: subscription.id,
-        approvalUrl: subscription.links.find((link) => link.rel === 'approve')
-          .href,
+        approvalUrl,
       }),
     };
   } catch (error) {
+    console.error('Error occurred:', error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        error: `Failed to create subscription ${error.message}`,
+        error: `Failed to create subscription: ${error.message}`,
       }),
     };
   }
