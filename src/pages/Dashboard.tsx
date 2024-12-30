@@ -1,59 +1,102 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { BarChart3, TrendingUp, Users, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import type { LinkTrackingResponse, LinkTracking } from '../types';
 
-interface StoreClick {
-  store: string;
-  clicks: number;
+interface DailyClicks {
+  date: string;
+  [key: string]: number | string;
 }
 
-interface ReleaseAnalytics {
-  id: string;
-  title: string;
-  totalClicks: number;
-  storeClicks: StoreClick[];
-}
-
-interface DashboardData {
-  totalPageViews: number;
-  uniqueVisitors: number;
-  totalClicks: number;
-  releases: ReleaseAnalytics[];
-}
+const COLORS = [
+  '#8884d8',
+  '#82ca9d',
+  '#ffc658',
+  '#ff7300',
+  '#ff0000',
+  '#00C49F',
+  '#FFBB28',
+  '#FF8042',
+];
 
 export function Dashboard() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [timeRange, setTimeRange] = useState('7d'); // '7d', '30d', '90d'
+  const [error, setError] = useState<string | null>(null);
+  const [linkTrackings, setLinkTrackings] = useState<LinkTrackingResponse | null>(
+    null
+  );
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchLinkTrackings = async () => {
       try {
-        const response = await fetch('/.netlify/functions/get-analytics', {
-          method: 'POST',
+        const accessToken = localStorage.getItem('accessToken');
+        const response = await fetch('/.netlify/functions/get-link-trackings', {
           headers: {
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
           },
-          credentials: 'include',
-          body: JSON.stringify({ timeRange }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch analytics');
+          throw new Error('Failed to fetch link trackings');
         }
 
-        const analyticsData = await response.json();
-        setData(analyticsData);
-      } catch (error) {
-        console.error('Error fetching analytics:', error);
+        const data = await response.json();
+        setLinkTrackings(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAnalytics();
-  }, [timeRange]);
+    fetchLinkTrackings();
+  }, []);
+
+  const chartData = useMemo(() => {
+    if (!linkTrackings?.data) return [];
+
+    // Get unique domains
+    const domains = new Set(
+      linkTrackings.data.map((tracking) => tracking.page.domain)
+    );
+
+    // Create a map of dates with click counts per domain
+    const clicksByDate = linkTrackings.data.reduce((acc, tracking) => {
+      const date = new Date(tracking.datetime).toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = { date };
+        // Initialize all domains with 0
+        domains.forEach((domain) => {
+          acc[date][domain] = 0;
+        });
+      }
+      acc[date][tracking.page.domain]++;
+      return acc;
+    }, {} as Record<string, DailyClicks>);
+
+    // Convert to array and sort by date
+    return Object.values(clicksByDate).sort((a, b) =>
+      (a.date as string).localeCompare(b.date as string)
+    );
+  }, [linkTrackings]);
+
+  const domains = useMemo(() => {
+    if (!linkTrackings?.data) return [];
+    return Array.from(
+      new Set(linkTrackings.data.map((tracking) => tracking.page.domain))
+    );
+  }, [linkTrackings]);
 
   if (isLoading) {
     return (
@@ -67,6 +110,24 @@ export function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-red-600">Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalClicks = linkTrackings?.data.length || 0;
+  const uniqueVisitors = new Set(
+    linkTrackings?.data.map((tracking) => tracking.link.url)
+  ).size;
+  const uniquePages = new Set(
+    linkTrackings?.data.map((tracking) => tracking.page.domain)
+  ).size;
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24">
       <div className="container mx-auto px-4 py-8">
@@ -75,104 +136,65 @@ export function Dashboard() {
             <h1 className="text-2xl font-bold text-gray-900">
               Welcome back, {user?.email}
             </h1>
-            <p className="text-gray-600">
-              Here's what's happening with your artist page
-            </p>
-          </div>
-
-          {/* Time Range Selector */}
-          <div className="mb-8">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
+            <p className="text-gray-600">Here's your link tracking overview</p>
           </div>
 
           {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-500 text-sm">Page Views</h3>
-                <BarChart3 className="w-5 h-5 text-indigo-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {data?.totalPageViews.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-500 text-sm">Unique Visitors</h3>
-                <Users className="w-5 h-5 text-indigo-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {data?.uniqueVisitors.toLocaleString()}
-              </p>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-gray-500 text-sm">Total Clicks</h3>
-                <TrendingUp className="w-5 h-5 text-indigo-600" />
+                <BarChart3 className="w-5 h-5 text-indigo-600" />
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                {data?.totalClicks.toLocaleString()}
+                {totalClicks.toLocaleString()}
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-500 text-sm">Active Releases</h3>
-                <Music className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-gray-500 text-sm">Unique Links</h3>
+                <TrendingUp className="w-5 h-5 text-indigo-600" />
               </div>
               <p className="text-2xl font-bold text-gray-900">
-                {data?.releases.length}
+                {uniqueVisitors.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-gray-500 text-sm">Active Pages</h3>
+                <Users className="w-5 h-5 text-indigo-600" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900">
+                {uniquePages.toLocaleString()}
               </p>
             </div>
           </div>
 
-          {/* Releases Analytics */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Release Performance
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {data?.releases.map((release) => (
-                <div key={release.id} className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {release.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {release.totalClicks.toLocaleString()} total clicks
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {release.storeClicks.map((store) => (
-                      <div
-                        key={store.store}
-                        className="bg-gray-50 p-3 rounded-lg"
-                      >
-                        <div className="text-sm font-medium text-gray-900">
-                          {store.store}
-                        </div>
-                        <div className="text-lg font-semibold text-indigo-600">
-                          {store.clicks.toLocaleString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          {/* Chart */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+              Clicks by Domain (Last 30 Days)
+            </h2>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  {domains.map((domain, index) => (
+                    <Bar
+                      key={domain}
+                      dataKey={domain}
+                      fill={COLORS[index % COLORS.length]}
+                      stackId="a"
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
