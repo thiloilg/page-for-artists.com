@@ -8,6 +8,7 @@ import {
   Store,
   Globe,
   ChevronDown,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -88,6 +89,8 @@ export function Dashboard() {
     timeRanges[0]
   );
   const [isTimeRangeOpen, setIsTimeRangeOpen] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [isDomainSelectorOpen, setIsDomainSelectorOpen] = useState(false);
 
   useEffect(() => {
     const fetchLinkTrackings = async () => {
@@ -105,6 +108,10 @@ export function Dashboard() {
 
         const data = await response.json();
         setLinkTrackings(data);
+        // Set the first domain as default if none selected
+        if (!selectedDomain && data.data.length > 0) {
+          setSelectedDomain(data.data[0].page.domain);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -113,10 +120,24 @@ export function Dashboard() {
     };
 
     fetchLinkTrackings();
-  }, []);
+  }, [selectedDomain]);
 
-  const dailyClicksByDomain = useMemo(() => {
+  const domains = useMemo(() => {
     if (!linkTrackings?.data) return [];
+    return Array.from(
+      new Set(linkTrackings.data.map((tracking) => tracking.page.domain))
+    );
+  }, [linkTrackings]);
+
+  const filteredData = useMemo(() => {
+    if (!linkTrackings?.data || !selectedDomain) return [];
+    return linkTrackings.data.filter(
+      (tracking) => tracking.page.domain === selectedDomain
+    );
+  }, [linkTrackings, selectedDomain]);
+
+  const dailyClicksByPlatform = useMemo(() => {
+    if (!filteredData.length) return [];
 
     const dates = getLastNDays(selectedTimeRange.value);
     const clicksByDate = dates.reduce((acc, date) => {
@@ -124,24 +145,24 @@ export function Dashboard() {
       return acc;
     }, {});
 
-    // Get unique domains
-    const domains = new Set(
-      linkTrackings.data.map((tracking) => tracking.page.domain)
+    // Get unique platforms
+    const platforms = new Set(
+      filteredData.map((tracking) => tracking.link.platform)
     );
 
-    // Initialize all dates with 0 clicks for each domain
+    // Initialize all dates with 0 clicks for each platform
     dates.forEach((date) => {
-      domains.forEach((domain) => {
-        clicksByDate[date][domain] = 0;
+      platforms.forEach((platform) => {
+        clicksByDate[date][platform] = 0;
       });
     });
 
     // Count clicks
-    linkTrackings.data.forEach((tracking) => {
+    filteredData.forEach((tracking) => {
       const date = formatDate(new Date(tracking.datetime));
       if (clicksByDate[date]) {
-        clicksByDate[date][tracking.page.domain] =
-          (clicksByDate[date][tracking.page.domain] || 0) + 1;
+        clicksByDate[date][tracking.link.platform] =
+          (clicksByDate[date][tracking.link.platform] || 0) + 1;
       }
     });
 
@@ -150,37 +171,37 @@ export function Dashboard() {
       date,
       ...clicks,
     }));
-  }, [linkTrackings, selectedTimeRange]);
+  }, [filteredData, selectedTimeRange]);
 
-  const platformStats = useMemo(() => {
-    if (!linkTrackings?.data) return [];
-
-    const platforms = linkTrackings.data.reduce((acc, tracking) => {
-      const platform = tracking.link.platform;
-      acc[platform] = (acc[platform] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(platforms).map(([name, value]) => ({
-      name,
-      value,
+  const clicksByHour = useMemo(() => {
+    const hours = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      clicks: 0,
     }));
-  }, [linkTrackings]);
 
-  const domainStats = useMemo(() => {
-    if (!linkTrackings?.data) return [];
+    filteredData.forEach((tracking) => {
+      const hour = new Date(tracking.datetime).getHours();
+      hours[hour].clicks++;
+    });
 
-    const domains = linkTrackings.data.reduce((acc, tracking) => {
-      const domain = tracking.page.domain;
-      acc[domain] = (acc[domain] || 0) + 1;
-      return acc;
-    }, {});
+    return hours;
+  }, [filteredData]);
 
-    return Object.entries(domains).map(([name, value]) => ({
-      name,
-      value,
-    }));
-  }, [linkTrackings]);
+  const trackStats = useMemo(() => {
+    const stats = {};
+    filteredData.forEach((tracking) => {
+      const trackKey = `${tracking.link.url}`; // You might want to extract track name from URL
+      if (!stats[trackKey]) {
+        stats[trackKey] = {
+          url: tracking.link.url,
+          platform: tracking.link.platform,
+          clicks: 0,
+        };
+      }
+      stats[trackKey].clicks++;
+    });
+    return Object.values(stats);
+  }, [filteredData]);
 
   if (isLoading) {
     return (
@@ -204,12 +225,12 @@ export function Dashboard() {
     );
   }
 
-  const totalClicks = linkTrackings?.data.length || 0;
-  const uniquePages = new Set(
-    linkTrackings?.data.map((tracking) => tracking.page.domain)
-  ).size;
+  const totalClicks = filteredData.length;
   const uniquePlatforms = new Set(
-    linkTrackings?.data.map((tracking) => tracking.link.platform)
+    filteredData.map((tracking) => tracking.link.platform)
+  ).size;
+  const uniqueTracks = new Set(
+    filteredData.map((tracking) => tracking.link.url)
   ).size;
 
   return (
@@ -217,7 +238,7 @@ export function Dashboard() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   Welcome back, {user?.email}
@@ -227,33 +248,64 @@ export function Dashboard() {
                 </p>
               </div>
 
-              {/* Time Range Selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsTimeRangeOpen(!isTimeRangeOpen)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
-                >
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span>{selectedTimeRange.label}</span>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Domain Selector */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDomainSelectorOpen(!isDomainSelectorOpen)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+                  >
+                    <Globe className="w-4 h-4 text-gray-500" />
+                    <span>{selectedDomain || 'Select Domain'}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                  </button>
 
-                {isTimeRangeOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                    {timeRanges.map((range) => (
-                      <button
-                        key={range.value}
-                        onClick={() => {
-                          setSelectedTimeRange(range);
-                          setIsTimeRangeOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        {range.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                  {isDomainSelectorOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {domains.map((domain) => (
+                        <button
+                          key={domain}
+                          onClick={() => {
+                            setSelectedDomain(domain);
+                            setIsDomainSelectorOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          {domain}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Time Range Selector */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsTimeRangeOpen(!isTimeRangeOpen)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+                  >
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span>{selectedTimeRange.label}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                  </button>
+
+                  {isTimeRangeOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {timeRanges.map((range) => (
+                        <button
+                          key={range.value}
+                          onClick={() => {
+                            setSelectedTimeRange(range);
+                            setIsTimeRangeOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          {range.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -272,16 +324,6 @@ export function Dashboard() {
 
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-500 text-sm">Active Pages</h3>
-                <Globe className="w-5 h-5 text-indigo-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {uniquePages.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-gray-500 text-sm">Active Platforms</h3>
                 <Store className="w-5 h-5 text-indigo-600" />
               </div>
@@ -289,29 +331,39 @@ export function Dashboard() {
                 {uniquePlatforms.toLocaleString()}
               </p>
             </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-gray-500 text-sm">Unique Tracks</h3>
+                <Music className="w-5 h-5 text-indigo-600" />
+              </div>
+              <p className="text-2xl font-bold text-gray-900">
+                {uniqueTracks.toLocaleString()}
+              </p>
+            </div>
           </div>
 
           {/* Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Daily Clicks Chart */}
+            {/* Daily Clicks by Platform */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Daily Clicks by Domain
+                Daily Clicks by Platform
               </h2>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyClicksByDomain}>
+                  <BarChart data={dailyClicksByPlatform}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    {Object.keys(dailyClicksByDomain[0] || {})
+                    {Object.keys(dailyClicksByPlatform[0] || {})
                       .filter((key) => key !== 'date')
-                      .map((domain, index) => (
+                      .map((platform, index) => (
                         <Bar
-                          key={domain}
-                          dataKey={domain}
+                          key={platform}
+                          dataKey={platform}
                           fill={COLORS[index % COLORS.length]}
                         />
                       ))}
@@ -320,96 +372,118 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Platform Distribution */}
+            {/* Clicks by Hour */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Clicks by Platform
+                Clicks by Hour of Day
               </h2>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={platformStats}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={150}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {platformStats.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Domain Distribution */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Clicks by Domain
-              </h2>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={domainStats}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={150}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {domainStats.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Trend Line */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Click Trends
-              </h2>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyClicksByDomain}>
+                  <BarChart data={clicksByHour}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
+                    <XAxis
+                      dataKey="hour"
+                      tickFormatter={(hour) =>
+                        `${hour.toString().padStart(2, '0')}:00`
+                      }
+                    />
                     <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    {Object.keys(dailyClicksByDomain[0] || {})
-                      .filter((key) => key !== 'date')
-                      .map((domain, index) => (
-                        <Line
-                          key={domain}
-                          type="monotone"
-                          dataKey={domain}
-                          stroke={COLORS[index % COLORS.length]}
-                          strokeWidth={2}
-                        />
-                      ))}
-                  </LineChart>
+                    <Tooltip
+                      labelFormatter={(hour) =>
+                        `${hour.toString().padStart(2, '0')}:00`
+                      }
+                    />
+                    <Bar dataKey="clicks" fill={COLORS[0]} />
+                  </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Track Performance Table */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                Track Performance
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="pb-3 font-semibold text-gray-600">Track</th>
+                      <th className="pb-3 font-semibold text-gray-600">
+                        Platform
+                      </th>
+                      <th className="pb-3 font-semibold text-gray-600">Clicks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trackStats.map((track, index) => (
+                      <tr
+                        key={index}
+                        className="border-b border-gray-100 last:border-0"
+                      >
+                        <td className="py-3">
+                          <div className="flex items-center">
+                            <Music className="w-4 h-4 text-gray-400 mr-2" />
+                            <span className="text-gray-900">{track.url}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-gray-600">{track.platform}</td>
+                        <td className="py-3 text-gray-900">
+                          {track.clicks.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                Recent Activity
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="pb-3 font-semibold text-gray-600">Time</th>
+                      <th className="pb-3 font-semibold text-gray-600">Track</th>
+                      <th className="pb-3 font-semibold text-gray-600">
+                        Platform
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          new Date(b.datetime).getTime() -
+                          new Date(a.datetime).getTime()
+                      )
+                      .slice(0, 10)
+                      .map((click, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-gray-100 last:border-0"
+                        >
+                          <td className="py-3">
+                            <div className="flex items-center">
+                              <Clock className="w-4 h-4 text-gray-400 mr-2" />
+                              <span className="text-gray-900">
+                                {new Date(click.datetime).toLocaleString()}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 text-gray-900">{click.link.url}</td>
+                          <td className="py-3 text-gray-600">
+                            {click.link.platform}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
